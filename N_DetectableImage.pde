@@ -4,7 +4,8 @@ import java.nio.ByteBuffer;
 class N_DetectableImage extends N_ObjectBase {
     public PImage pImage;
     
-    boolean showDetectResult = false;
+    private boolean isDetected = false;
+    public boolean showDetectResult = false;
     ArrayList<DetectRect> detectRects;
    
     N_DetectableImage(String imgPath, N_Vector2 position) {
@@ -17,6 +18,8 @@ class N_DetectableImage extends N_ObjectBase {
 
     //サーバーに画像を送信し、識別結果をdetectRectsに格納
     public void detect(float conf) {
+        if (isDetected) return;
+
         pImage.loadPixels();
         String base64str = Utility.pixelsToBase64(pImage.pixels);
         String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
@@ -44,6 +47,7 @@ class N_DetectableImage extends N_ObjectBase {
             detectRects.add(detectRect);
         }
         
+        isDetected = true;
         showDetectResult = true;
     }
     
