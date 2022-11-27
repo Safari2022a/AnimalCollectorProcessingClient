@@ -5,7 +5,7 @@ class N_DetectableImage extends N_ObjectBase {
     public PImage pImage;
     
     private boolean isDetected = false;
-    public boolean showDetectResult = false;
+    public boolean showDetectResult = true;
     ArrayList<DetectRect> detectRects;
    
     N_DetectableImage(String imgPath, N_Vector2 position) {
@@ -14,25 +14,30 @@ class N_DetectableImage extends N_ObjectBase {
         transform.setPosition(position);
         pImage = loadImage(imgPath);
         detectRects = new ArrayList<DetectRect>();
+        detect(0.8);
     }
 
     //サーバーに画像を送信し、識別結果をdetectRectsに格納
     public void detect(float conf) {
         if (isDetected) return;
 
-        pImage.loadPixels();
-        String base64str = Utility.pixelsToBase64(pImage.pixels);
-        String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
+        // pImage.loadPixels();
+        // String base64str = Utility.pixelsToBase64(pImage.pixels);
+        // String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
 
         //通信関係の処理
-        PostRequest post = new PostRequest(Settings.baseURL + "animal-detect");
-        post.addHeader("Content-Type", "application/json");
-        post.addData(jsonText);
-        post.send(); //Httpリクエストを送信し、レスポンスが返ってくるまで待つ
+        // PostRequest post = new PostRequest(Settings.baseURL + "animal-detect");
+        // post.addHeader("Content-Type", "application/json");
+        // post.addData(jsonText);
+        // post.send(); //Httpリクエストを送信し、レスポンスが返ってくるまで待つ
+        // print(post.getContent());
+        // // print(post.getContent() instanceof String);
 
-        JSONObject resultJson = parseJSONObject(post.getContent());
+        String res = "{\"params\": [[\"dog\",0.30150464177131653,0.5088607668876648,0.5821759104728699,0.946835458278656,0.8615586757659912],[\"cat\",0.7913773059844971,0.5449367165565491,0.3697916567325592,0.8620253205299377,0.9362995624542236]]}";
+        JSONObject resultJson = parseJSONObject(res);
         JSONArray jsonArray = resultJson.getJSONArray("params");
         
+
         detectRects.clear();
         for (int i = 0; i < 100; i++) {
             if (jsonArray.isNull(i)) break;
