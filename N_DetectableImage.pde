@@ -1,5 +1,4 @@
 import http.requests.*;
-import java.nio.ByteBuffer;
 
 class N_DetectableImage extends N_ObjectBase {
     public PImage pImage;
@@ -8,38 +7,53 @@ class N_DetectableImage extends N_ObjectBase {
     public boolean showDetectResult = true;
     ArrayList<DetectRect> detectRects;
    
-    N_DetectableImage(String imgPath, N_Vector2 position) {
+    N_DetectableImage(PImage pImage, N_Vector2 position) {
         super();
 
         transform.setPosition(position);
-        pImage = loadImage(imgPath);
+        this.pImage = pImage;
         detectRects = new ArrayList<DetectRect>();
         detect(0.8);
+    }
+
+    N_DetectableImage(String imgPath, N_Vector2 position) {
+        this(loadImage(imgPath), position);
+    }
+    
+    public ArrayList<PImage> getCrops() {
+        ArrayList<PImage> res = new ArrayList<PImage>();
+        for (int i = 0; i < detectRects.size(); i++) {
+            DetectRect dr = detectRects.get(i);
+            res.add(pImage.get((int)dr.x, (int)dr.y, (int)dr.w, (int)dr.h));
+        }
+        return res;
     }
 
     //サーバーに画像を送信し、識別結果をdetectRectsに格納
     public void detect(float conf) {
         if (isDetected) return;
 
-        // pImage.loadPixels();
-        // String base64str = Utility.pixelsToBase64(pImage.pixels);
-        // String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
+        pImage.loadPixels();
+        int t0_0 = millis();
+        String base64str = Utility.pixelsToBase64(pImage.pixels);
+        int t0_1 = millis();
+        println(String.format("time: %d", t0_1 - t0_0));
+        String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
 
         //通信関係の処理
-        // PostRequest post = new PostRequest(Settings.baseURL + "animal-detect");
-        // post.addHeader("Content-Type", "application/json");
-        // post.addData(jsonText);
-        // post.send(); //Httpリクエストを送信し、レスポンスが返ってくるまで待つ
-        // print(post.getContent());
-        // // print(post.getContent() instanceof String);
+        PostRequest post = new PostRequest(N_Settings.baseURL + "animal-detect");
+        post.addHeader("Content-Type", "application/json");
+        post.addData(jsonText);
+        post.send(); //Httpリクエストを送信し、レスポンスが返ってくるまで待つ
 
-        String res = "{\"params\": [[\"dog\",0.30150464177131653,0.5088607668876648,0.5821759104728699,0.946835458278656,0.8615586757659912],[\"cat\",0.7913773059844971,0.5449367165565491,0.3697916567325592,0.8620253205299377,0.9362995624542236]]}";
-        JSONObject resultJson = parseJSONObject(res);
+        // String res = "{\"params\": [[\"dog\",0.30150464177131653,0.5088607668876648,0.5821759104728699,0.946835458278656,0.8615586757659912],[\"cat\",0.7913773059844971,0.5449367165565491,0.3697916567325592,0.8620253205299377,0.9362995624542236]]}";
+        // JSONObject resultJson = parseJSONObject(res);
+        JSONObject resultJson = parseJSONObject(post.getContent());
         JSONArray jsonArray = resultJson.getJSONArray("params");
         
 
         detectRects.clear();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 6; i++) {
             if (jsonArray.isNull(i)) break;
             ArrayList<Float> label = new ArrayList<Float>();
             JSONArray _jsonArray = jsonArray.getJSONArray(i);
@@ -91,15 +105,18 @@ class DetectRect extends N_ObjectBase {
     }
 
     public void draw() {
-        strokeWeight(3);
-        fill(rectColor);
-        rect(transform.getPosition().x, transform.getPosition().y - 20, 80, 20);
+        //左上の四角
+        String s = String.format("%s   %.2f", cls, conf);
         fill(255);
         textSize(16);
-        String s = String.format("%s   %.2f", cls, conf);
         text(s, transform.getPosition().x, transform.getPosition().y - 8);
         noFill();
         stroke(rectColor);
         rect(transform.getPosition().x, transform.getPosition().y, w, h);
+        
+        //大枠
+        strokeWeight(3);
+        fill(rectColor);
+        rect(transform.getPosition().x, transform.getPosition().y - 20, 80, 20);
     }
 }
