@@ -6,6 +6,8 @@ class N_DetectableImage extends N_ObjectBase {
     private boolean isDetected = false;
     public boolean showDetectResult = true;
     ArrayList<DetectRect> detectRects;
+
+    static final float shrinkRatio = 5;
    
     N_DetectableImage(PImage pImage, N_Vector2 position) {
         super();
@@ -32,13 +34,15 @@ class N_DetectableImage extends N_ObjectBase {
     //サーバーに画像を送信し、識別結果をdetectRectsに格納
     public void detect(float conf) {
         if (isDetected) return;
+        PImage _pImage = pImage.get();
+        _pImage.resize(_pImage.width/(int)shrinkRatio, _pImage.height/(int)shrinkRatio);
 
-        pImage.loadPixels();
+        _pImage.loadPixels();
         int t0_0 = millis();
-        String base64str = Utility.pixelsToBase64(pImage.pixels);
+        String base64str = Utility.pixelsToBase64(_pImage.pixels);
         int t0_1 = millis();
         println(String.format("time: %d", t0_1 - t0_0));
-        String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, pImage.width, pImage.height, conf);
+        String jsonText = String.format("{\"img_base64\": \"%s\", \"width\": %d, \"height\": %d, \"conf\": %.5f}", base64str, _pImage.width, _pImage.height, conf);
 
         //通信関係の処理
         PostRequest post = new PostRequest(N_Settings.baseURL + "animal-detect");
@@ -50,8 +54,9 @@ class N_DetectableImage extends N_ObjectBase {
         // JSONObject resultJson = parseJSONObject(res);
         JSONObject resultJson = parseJSONObject(post.getContent());
         JSONArray jsonArray = resultJson.getJSONArray("params");
-        
 
+        println(resultJson);
+        
         detectRects.clear();
         for (int i = 0; i < 6; i++) {
             if (jsonArray.isNull(i)) break;
@@ -105,6 +110,11 @@ class DetectRect extends N_ObjectBase {
     }
 
     public void draw() {
+        //大枠
+        strokeWeight(3);
+        fill(rectColor);
+        rect(transform.getPosition().x, transform.getPosition().y - 20, 80, 20);
+        
         //左上の四角
         String s = String.format("%s   %.2f", cls, conf);
         fill(255);
@@ -113,10 +123,5 @@ class DetectRect extends N_ObjectBase {
         noFill();
         stroke(rectColor);
         rect(transform.getPosition().x, transform.getPosition().y, w, h);
-        
-        //大枠
-        strokeWeight(3);
-        fill(rectColor);
-        rect(transform.getPosition().x, transform.getPosition().y - 20, 80, 20);
     }
 }

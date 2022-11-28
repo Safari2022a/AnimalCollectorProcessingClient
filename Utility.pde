@@ -109,14 +109,12 @@ static class Utility {
         }
         String base64Str = base64Str_.substring(0, base64Str_.length() - eqN);
         int n = base64Str.length();
-        // println(String.format("n: %d\n", n));
         byte[] res = new byte[n*6/8]; //何でこれでいいのか分からない
         int pos = 0;
         int cnt8 = 0;
         String val = "";
         for (int i = 0; i < n; i++) {
             int b = base64Hash.get(base64Str.charAt(i));
-            // println(String.format("b: %d\n", b));
             for (int j = 0; j < 6; j++) {
                 // val += String.format("%d", (b & 0x80)/0x80);
                 val += String.format("%d", (b & 0x20)/0x20);
@@ -126,12 +124,11 @@ static class Utility {
                 if (cnt8 == 8) {
                     res[pos++] = (byte)Integer.parseInt(val, 2);
                     cnt8 = 0;
-                    // println(val);
                     val = "";
                 }
             }
         }
-        // print(cnt8);
+
         return res;
     }
 
